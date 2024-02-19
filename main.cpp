@@ -5,41 +5,63 @@
 
 #include <errno.h>
 
-int main(int argc, char **argv){
-    if(argc != 2) return 1;
+void runClient();
+void runServer();
+void printUsageCode();
 
-    unsigned int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
+int main(int argc, char **argv){
+    if(argc != 2) {
+        printUsageCode();
+        return 0;
+    }
 
     if(strcmp(argv[1],"client") == 0){
         printf("uudpchat client started.\n");
-        char buffer[256] = "hello World";
-
-        sockaddr_in addr = {}; 
-        addr.sin_port = htons(1212);
-        addr.sin_family = AF_INET; 
-        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-
-
-        sendto(socketfd, buffer, 256, 0, (sockaddr*)&addr, sizeof(addr));
-        printf("ERROR: %d\n", errno);
-
-    }else{
+        runClient();
+    }else if(strcmp(argv[1], "server") == 0){
         printf("uudpchat server started.\n");
-
-        sockaddr_in addr = {}; 
-        addr.sin_port = htons(1212);
-        addr.sin_family = AF_INET; 
-        addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        int error = bind(socketfd, (sockaddr*)&addr, sizeof(addr));
-
-        if(error == -1){
-            printf("could not bind. Error: %d\n", errno);
-            return 1;
-        }
-
-        char buffer[256] = "";
-        recvfrom(socketfd, buffer, 256, 0, 0, 0);
-        printf("Received: %s\n", buffer);
+        runServer();
+    }else{
+        printUsageCode();
     }
     return 0;
+}
+
+void runClient(){
+    unsigned int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
+    char buffer[256] = "hello World";
+
+    sockaddr_in addr = {}; 
+    addr.sin_port = htons(1212);
+    addr.sin_family = AF_INET; 
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+    sendto(socketfd, buffer, 256, 0, (sockaddr*)&addr, sizeof(addr));
+    printf("ERROR: %d\n", errno);
+}
+
+void runServer(){
+    unsigned int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
+    sockaddr_in addr = {}; 
+
+    addr.sin_port = htons(1212);
+    addr.sin_family = AF_INET; 
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    int error = bind(socketfd, (sockaddr*)&addr, sizeof(addr));
+
+    if(error == -1){
+        printf("could not bind. Error: %d\n", errno);
+        return;
+    }
+
+    char buffer[256] = "";
+    recvfrom(socketfd, buffer, 256, 0, 0, 0);
+    printf("Received: %s\n", buffer);
+}
+
+void printUsageCode(){
+    printf("Wrong usage.\n");
+    printf("\n");
+    printf("Usage:\n");
+    printf("uudpchat [server | client]\n");
 }
