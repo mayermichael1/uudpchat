@@ -29,15 +29,16 @@ int main(int argc, char **argv){
 
 void runClient(){
     unsigned int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
+    sockaddr_in addr = {}; 
     char buffer[256] = "hello World";
 
-    sockaddr_in addr = {}; 
+    fgets(buffer, 256, stdin);
+
     addr.sin_port = htons(1212);
     addr.sin_family = AF_INET; 
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     sendto(socketfd, buffer, 256, 0, (sockaddr*)&addr, sizeof(addr));
-    printf("ERROR: %d\n", errno);
 }
 
 void runServer(){
