@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <errno.h>
 
@@ -37,6 +38,7 @@ void runClient(){
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     while(1){
+        printf("> ");
         fgets(buffer, 255, stdin);
 
         unsigned int length = strlen(buffer);
@@ -62,8 +64,14 @@ void runServer(){
 
     char buffer[256] = "";
     while(1){
-        recvfrom(socketfd, buffer, 256, 0, 0, 0);
-        printf("> %s\n", buffer);
+        sockaddr_in clientAddr = {};
+        char ip[INET_ADDRSTRLEN] = "";
+        unsigned int addrLength = sizeof(clientAddr);
+
+        recvfrom(socketfd, buffer, 256, 0, (sockaddr*)&clientAddr, &addrLength);
+        inet_ntop(AF_INET, &clientAddr.sin_addr, ip, INET_ADDRSTRLEN);
+        printf("%s:%d> %s\n",ip, ntohs(clientAddr.sin_port), buffer);
+
     }
 }
 
