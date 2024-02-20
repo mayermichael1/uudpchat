@@ -32,13 +32,18 @@ void runClient(){
     sockaddr_in addr = {}; 
     char buffer[256] = "hello World";
 
-    fgets(buffer, 255, stdin);
-
     addr.sin_port = htons(1212);
     addr.sin_family = AF_INET; 
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-    sendto(socketfd, buffer, 256, 0, (sockaddr*)&addr, sizeof(addr));
+    while(1){
+        fgets(buffer, 255, stdin);
+
+        unsigned int length = strlen(buffer);
+        if(buffer[length-1] == '\n') buffer[length-1] = 0;
+
+        sendto(socketfd, buffer, 256, 0, (sockaddr*)&addr, sizeof(addr));
+    }
 }
 
 void runServer(){
@@ -56,8 +61,10 @@ void runServer(){
     }
 
     char buffer[256] = "";
-    recvfrom(socketfd, buffer, 256, 0, 0, 0);
-    printf("Received: %s\n", buffer);
+    while(1){
+        recvfrom(socketfd, buffer, 256, 0, 0, 0);
+        printf("> %s\n", buffer);
+    }
 }
 
 void printUsageCode(){
