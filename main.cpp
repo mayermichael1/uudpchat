@@ -32,7 +32,7 @@ void runClient(){
     sockaddr_in addr = {}; 
     char buffer[256] = "hello World";
 
-    fgets(buffer, 256, stdin);
+    fgets(buffer, 255, stdin);
 
     addr.sin_port = htons(1212);
     addr.sin_family = AF_INET; 
