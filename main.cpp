@@ -6,15 +6,25 @@
 
 #include <errno.h>
 
+#include <signal.h>
+
+static bool run = true;
+
 void runClient();
 void runServer();
 void printUsageCode();
+
+void handleInt(int signal);
 
 int main(int argc, char **argv){
     if(argc != 2) {
         printUsageCode();
         return 0;
     }
+
+    struct sigaction action;
+    action.sa_handler = handleInt;
+    sigaction(SIGINT, &action, NULL);
 
     if(strcmp(argv[1],"client") == 0){
         printf("uudpchat client started.\n");
@@ -37,7 +47,7 @@ void runClient(){
     addr.sin_family = AF_INET; 
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-    while(1){
+    while(run){
         printf("> ");
         fgets(buffer, 255, stdin);
 
@@ -46,6 +56,9 @@ void runClient(){
 
         sendto(socketfd, buffer, 256, 0, (sockaddr*)&addr, sizeof(addr));
     }
+
+    printf("uudpchat client ended\n");
+
 }
 
 void runServer(){
@@ -63,7 +76,7 @@ void runServer(){
     }
 
     char buffer[256] = "";
-    while(1){
+    while(run){
         sockaddr_in clientAddr = {};
         char ip[INET_ADDRSTRLEN] = "";
         unsigned int addrLength = sizeof(clientAddr);
@@ -73,6 +86,8 @@ void runServer(){
         printf("%s:%d> %s\n",ip, ntohs(clientAddr.sin_port), buffer);
 
     }
+
+    printf("uudpchat server ended\n");
 }
 
 void printUsageCode(){
@@ -80,4 +95,9 @@ void printUsageCode(){
     printf("\n");
     printf("Usage:\n");
     printf("uudpchat [server | client]\n");
+}
+
+void handleInt(int signal){
+    (void)signal;
+    run = false;
 }
