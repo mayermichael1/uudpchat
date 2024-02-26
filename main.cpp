@@ -10,11 +10,14 @@
 
 static bool run = true;
 
+static unsigned short PORT = 1212;
+static const unsigned int BUFFER_LENGTH = 512;
+
 void runClient();
 void runServer();
 void printUsageCode();
 
-void handleInt(int signal);
+void handleCtrlC(int signal);
 
 int main(int argc, char **argv){
     if(argc != 2) {
@@ -22,16 +25,20 @@ int main(int argc, char **argv){
         return 0;
     }
 
+    // handle ctrl c interrupt
     struct sigaction action;
-    action.sa_handler = handleInt;
+    action.sa_handler = handleCtrlC;
     sigaction(SIGINT, &action, NULL);
 
+    // start application in server or client mode
     if(strcmp(argv[1],"client") == 0){
         printf("uudpchat client started.\n");
         runClient();
+        printf("uudpchat client ended\n");
     }else if(strcmp(argv[1], "server") == 0){
         printf("uudpchat server started.\n");
         runServer();
+        printf("uudpchat server ended\n");
     }else{
         printUsageCode();
     }
@@ -41,33 +48,31 @@ int main(int argc, char **argv){
 void runClient(){
     unsigned int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in addr = {}; 
-    char buffer[256] = "hello World";
+    char buffer[BUFFER_LENGTH] = "hello World";
 
-    addr.sin_port = htons(1212);
+    addr.sin_port = htons(PORT);
     addr.sin_family = AF_INET; 
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     while(run){
         printf("> ");
-        fgets(buffer, 255, stdin);
+        fgets(buffer, BUFFER_LENGTH-1, stdin);
 
         unsigned int length = strlen(buffer);
         if(buffer[length-1] == '\n') buffer[length-1] = 0;
 
-        sendto(socketfd, buffer, 256, 0, (sockaddr*)&addr, sizeof(addr));
+        sendto(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&addr, sizeof(addr));
     }
-
-    printf("uudpchat client ended\n");
-
 }
 
 void runServer(){
     unsigned int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in addr = {}; 
 
-    addr.sin_port = htons(1212);
+    addr.sin_port = htons(PORT);
     addr.sin_family = AF_INET; 
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
     int error = bind(socketfd, (sockaddr*)&addr, sizeof(addr));
 
     if(error == -1){
@@ -75,19 +80,18 @@ void runServer(){
         return;
     }
 
-    char buffer[256] = "";
+    char buffer[BUFFER_LENGTH] = "";
     while(run){
         sockaddr_in clientAddr = {};
         char ip[INET_ADDRSTRLEN] = "";
         unsigned int addrLength = sizeof(clientAddr);
 
-        recvfrom(socketfd, buffer, 256, 0, (sockaddr*)&clientAddr, &addrLength);
+        recvfrom(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&clientAddr, &addrLength);
+
         inet_ntop(AF_INET, &clientAddr.sin_addr, ip, INET_ADDRSTRLEN);
         printf("%s:%d> %s\n",ip, ntohs(clientAddr.sin_port), buffer);
 
     }
-
-    printf("uudpchat server ended\n");
 }
 
 void printUsageCode(){
@@ -97,7 +101,7 @@ void printUsageCode(){
     printf("uudpchat [server | client]\n");
 }
 
-void handleInt(int signal){
+void handleCtrlC(int signal){
     (void)signal;
     run = false;
 }
