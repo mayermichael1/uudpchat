@@ -27,6 +27,8 @@ void printUsageCode();
 void clearScreen();
 void setPosition(unsigned int column, unsigned int row);
 vector getTerminalSize();
+void setForegroundColor(unsigned int color);
+void setBackgroundColor(unsigned int color);
 
 void handleCtrlC(int signal);
 
@@ -39,6 +41,9 @@ int main(int argc, char **argv){
     vector winSize = getTerminalSize();
     clearScreen();
     setPosition(1,1);
+
+    setForegroundColor(0);
+    setBackgroundColor(7);
 
     printf("Initialized Screen with size: %d * %d\n", winSize.column, winSize.row);
 
@@ -147,3 +152,12 @@ vector getTerminalSize(){
     return winSize;
 }
 
+void setForegroundColor(unsigned int color){
+    if(color > 7) color = 7;
+    printf("\e[%dm",(30+color));
+}
+
+void setBackgroundColor(unsigned int color){
+    if(color > 7) color = 7;
+    printf("\e[%dm",(40+color));
+}
