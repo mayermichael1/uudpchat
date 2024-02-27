@@ -8,6 +8,8 @@
 
 #include <signal.h>
 
+#include <sys/ioctl.h>
+
 static bool run = true;
 
 static unsigned short PORT = 1212;
@@ -24,6 +26,14 @@ int main(int argc, char **argv){
         printUsageCode();
         return 0;
     }
+
+    unsigned int columns = 0;
+    unsigned int rows = 0;
+    winsize terminalSize;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &terminalSize);
+    columns = terminalSize.ws_col;
+    rows = terminalSize.ws_row;
+    printf("Init Window: %d * %d\n", columns, rows);
 
     // handle ctrl c interrupt
     struct sigaction action;
