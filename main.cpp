@@ -121,6 +121,9 @@ void printUsageCode(){
 void handleCtrlC(int signal){
     (void)signal;
     run = false;
+    //TODO: remove this code when polling messages is done
+    printf("\n");
+    _exit(0);
 }
 
 void clearScreen(){
