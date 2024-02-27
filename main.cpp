@@ -10,6 +10,11 @@
 
 #include <sys/ioctl.h>
 
+struct vector{
+    int column;
+    int row;
+};
+
 static bool run = true;
 
 static unsigned short PORT = 1212;
@@ -17,7 +22,11 @@ static const unsigned int BUFFER_LENGTH = 512;
 
 void runClient();
 void runServer();
+
 void printUsageCode();
+void clearScreen();
+void setPosition(unsigned int column, unsigned int row);
+vector getTerminalSize();
 
 void handleCtrlC(int signal);
 
@@ -27,13 +36,11 @@ int main(int argc, char **argv){
         return 0;
     }
 
-    unsigned int columns = 0;
-    unsigned int rows = 0;
-    winsize terminalSize;
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &terminalSize);
-    columns = terminalSize.ws_col;
-    rows = terminalSize.ws_row;
-    printf("Init Window: %d * %d\n", columns, rows);
+    vector winSize = getTerminalSize();
+    clearScreen();
+    setPosition(1,1);
+
+    printf("Initialized Screen with size: %d * %d\n", winSize.column, winSize.row);
 
     // handle ctrl c interrupt
     struct sigaction action;
@@ -115,3 +122,25 @@ void handleCtrlC(int signal){
     (void)signal;
     run = false;
 }
+
+void clearScreen(){
+    printf("\e[2J");
+}
+
+void setPosition(unsigned int column, unsigned int row){
+    printf("\e[%d;%dH", column, row);
+}
+
+vector getTerminalSize(){
+    vector winSize;
+    winSize.row = 0;
+    winSize.column = 0;
+
+    winsize terminalSize;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &terminalSize);
+    winSize.column = terminalSize.ws_col;
+    winSize.row = terminalSize.ws_row;
+
+    return winSize;
+}
+
