@@ -98,6 +98,10 @@ void runClient(){
         printf("> ");
         textInput(buffer, BUFFER_LENGTH);
         sendto(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&addr, sizeof(addr));
+
+        // confirm message sent
+        clearLine();
+        printf("[%-7s]> %s\n","sent", buffer);
     }
 }
 
@@ -145,6 +149,34 @@ void handleCtrlC(int signal){
     _exit(0);
 }
 
+void textInput(char* buffer, const int MAX_LENGTH){
+    memset(buffer, 0, MAX_LENGTH);
+    unsigned short index = 0;
+    do{
+        clearLine();
+        printf("[%03d/%03d]> %s", index, MAX_LENGTH, buffer);
+        fflush(stdout); // we need to flush the output here because we do not use '\n'
+
+        char character;
+        read(STDIN_FILENO, &character, 8);
+
+        if(character == 8 || character == 127){
+            if(index > 0){ // reset last character
+                index--;
+                buffer[index] = 0;
+            }
+            continue;
+        } else if(character == '\n'){
+            buffer[index] = 0;
+            break;
+        }else if(character >= 32 && character <= 126){ // "normal" ascii character
+            buffer[index] = character;
+            index++;
+        }
+    }while(index<= MAX_LENGTH);
+
+}
+
 void clearScreen(){
     printf("\e[2J");
 }
@@ -176,33 +208,6 @@ void setBackgroundColor(unsigned int color){
     printf("\e[%dm",(40+color));
 }
 
-void textInput(char* buffer, const int MAX_LENGTH){
-    memset(buffer, 0, MAX_LENGTH);
-    unsigned short index = 0;
-    do{
-        clearLine();
-        printf("[%3d:%3d]> %s", index, MAX_LENGTH, buffer);
-        fflush(stdout); // we need to flush the output here
-
-        char character;
-        read(STDIN_FILENO, &character, 8);
-
-        if(character == 8 || character == 127){
-            if(index > 0){ // reset last character
-                index--;
-                buffer[index] = 0;
-            }
-            continue;
-        } else if(character == '\n'){
-            buffer[index] = 0;
-            break;
-        }else if(character >= 32 && character <= 126){ // "normal" ascii character
-            buffer[index] = character;
-            index++;
-        }
-    }while(index<= MAX_LENGTH);
-    printf("\n");
-}
 
 void clearLine(){
     setLineStart();
