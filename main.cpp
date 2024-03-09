@@ -158,7 +158,8 @@ void textInput(char* buffer, const int MAX_LENGTH){
         fflush(stdout); // we need to flush the output here because we do not use '\n'
 
         char character;
-        read(STDIN_FILENO, &character, 8);
+        read(STDIN_FILENO, &character, 1);
+        //TODO: read more than 1 byte if more is available
 
         if(character == 8 || character == 127){
             if(index > 0){ // reset last character
@@ -169,7 +170,7 @@ void textInput(char* buffer, const int MAX_LENGTH){
         } else if(character == '\n'){
             buffer[index] = 0;
             break;
-        }else if(character >= 32 && character <= 126){ // "normal" ascii character
+        }else if(true || (character >= 32 && character <= 126)){ // "normal" ascii character // TODO: temporary always true
             buffer[index] = character;
             index++;
         }
