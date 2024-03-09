@@ -1,14 +1,14 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <string.h>
-#include <netinet/in.h>
+#include <netinet/in.h> 
 #include <arpa/inet.h>
 
 #include <errno.h>
-
 #include <signal.h>
 
 #include <sys/ioctl.h>
+#include <termios.h>
 
 struct vector{
     int column;
@@ -29,10 +29,15 @@ void setPosition(unsigned int column, unsigned int row);
 vector getTerminalSize();
 void setForegroundColor(unsigned int color);
 void setBackgroundColor(unsigned int color);
+void clearLine();
+void setLineStart();
+
+void textInput(char* buffer, const int MAX_LENGTH);
 
 void handleCtrlC(int signal);
 
 int main(int argc, char **argv){
+    (void)argv;
     if(argc != 2) {
         printUsageCode();
         return 0;
@@ -42,8 +47,16 @@ int main(int argc, char **argv){
     clearScreen();
     setPosition(1,1);
 
-    setForegroundColor(0);
-    setBackgroundColor(7);
+    // not needed apparently 
+    //setvbuf(stdin, NULL, _IONBF, 0); // disable input buffer
+    termios termSettings = {};
+    tcgetattr(STDIN_FILENO, &termSettings);
+    termSettings.c_lflag &= ~(ICANON); // disable ICANON mode
+    termSettings.c_cc[VMIN] = 1; // return from read calls after 1 byte is read
+    tcsetattr(STDIN_FILENO, TCSANOW, &termSettings);
+
+    //setForegroundColor(0);
+    //setBackgroundColor(7);
 
     printf("Initialized Screen with size: %d * %d\n", winSize.column, winSize.row);
 
@@ -51,6 +64,10 @@ int main(int argc, char **argv){
     struct sigaction action;
     action.sa_handler = handleCtrlC;
     sigaction(SIGINT, &action, NULL);
+
+    //char buffer[100] = "";
+    //textInput(buffer, 100);
+
 
     // start application in server or client mode
     if(strcmp(argv[1],"client") == 0){
@@ -64,6 +81,7 @@ int main(int argc, char **argv){
     }else{
         printUsageCode();
     }
+
     return 0;
 }
 
@@ -78,11 +96,7 @@ void runClient(){
 
     while(run){
         printf("> ");
-        fgets(buffer, BUFFER_LENGTH-1, stdin);
-
-        unsigned int length = strlen(buffer);
-        if(buffer[length-1] == '\n') buffer[length-1] = 0;
-
+        textInput(buffer, BUFFER_LENGTH);
         sendto(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&addr, sizeof(addr));
     }
 }
@@ -160,4 +174,47 @@ void setForegroundColor(unsigned int color){
 void setBackgroundColor(unsigned int color){
     if(color > 7) color = 7;
     printf("\e[%dm",(40+color));
+}
+
+void textInput(char* buffer, const int MAX_LENGTH){
+    memset(buffer, 0, MAX_LENGTH);
+    unsigned short index = 0;
+    do{
+        setLineStart();
+        clearLine();
+        printf("[%3d:%3d]> %s", index, MAX_LENGTH, buffer);
+        fflush(stdout); // we need to flush the output here
+
+        char characters[8] = {0};
+        char character;
+        unsigned int charactersRead = read(STDIN_FILENO, &characters, 8);
+        //TODO: catch terminal input sequences properly
+        if(charactersRead != 1) continue; // hacky way to catch terminal input sequences
+        character = characters[0];
+
+        if(character == 8 || character == 127){
+            if(index > 0){ // reset last character
+                index--;
+                buffer[index] = 0;
+            }
+            continue;
+        } else if(character == '\n'){
+            buffer[index] = 0;
+            break;
+        }else if(character >= 32 && character <= 126){ // "normal" ascii character
+            buffer[index] = character;
+            index++;
+        }
+        //TODO: some characters produce special sequences called terminal input sequences these should be caught 
+        // more information: https://en.wikipedia.org/wiki/ANSI_escape_code#Terminal_input_sequences
+        // e.g.: pressing the delete key produces following sequence : [3~
+    }while(index<= MAX_LENGTH);
+    printf("\n");
+}
+
+void clearLine(){
+    printf("\e[K");
+}
+void setLineStart(){
+    printf("\e[1G");
 }
