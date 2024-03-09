@@ -1,5 +1,5 @@
 # default variables
-CXX := g++
+CXX := clang
 CXXFLAGS := -Wall -Wextra -Werror
 LDFLAGS :=
 LDLIBS := 
