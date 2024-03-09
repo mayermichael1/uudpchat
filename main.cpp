@@ -51,7 +51,7 @@ int main(int argc, char **argv){
     //setvbuf(stdin, NULL, _IONBF, 0); // disable input buffer
     termios termSettings = {};
     tcgetattr(STDIN_FILENO, &termSettings);
-    termSettings.c_lflag &= ~(ICANON); // disable ICANON mode
+    termSettings.c_lflag &= ~(ICANON | ECHO); // disable ICANON mode and ECHO
     termSettings.c_cc[VMIN] = 1; // return from read calls after 1 byte is read
     tcsetattr(STDIN_FILENO, TCSANOW, &termSettings);
 
@@ -180,17 +180,12 @@ void textInput(char* buffer, const int MAX_LENGTH){
     memset(buffer, 0, MAX_LENGTH);
     unsigned short index = 0;
     do{
-        setLineStart();
         clearLine();
         printf("[%3d:%3d]> %s", index, MAX_LENGTH, buffer);
         fflush(stdout); // we need to flush the output here
 
-        char characters[8] = {0};
         char character;
-        unsigned int charactersRead = read(STDIN_FILENO, &characters, 8);
-        //TODO: catch terminal input sequences properly
-        if(charactersRead != 1) continue; // hacky way to catch terminal input sequences
-        character = characters[0];
+        read(STDIN_FILENO, &character, 8);
 
         if(character == 8 || character == 127){
             if(index > 0){ // reset last character
@@ -205,14 +200,12 @@ void textInput(char* buffer, const int MAX_LENGTH){
             buffer[index] = character;
             index++;
         }
-        //TODO: some characters produce special sequences called terminal input sequences these should be caught 
-        // more information: https://en.wikipedia.org/wiki/ANSI_escape_code#Terminal_input_sequences
-        // e.g.: pressing the delete key produces following sequence : [3~
     }while(index<= MAX_LENGTH);
     printf("\n");
 }
 
 void clearLine(){
+    setLineStart();
     printf("\e[K");
 }
 void setLineStart(){
