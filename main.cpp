@@ -10,6 +10,7 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 
+
 struct vector{
     int column;
     int row;
@@ -37,7 +38,6 @@ void textInput(char* buffer, const int MAX_LENGTH);
 void handleCtrlC(int signal);
 
 int main(int argc, char **argv){
-    (void)argv;
     if(argc != 2) {
         printUsageCode();
         return 0;
@@ -46,28 +46,21 @@ int main(int argc, char **argv){
     vector winSize = getTerminalSize();
     clearScreen();
     setPosition(1,1);
+    printf("Initialized Screen with size: %d * %d\n", winSize.column, winSize.row);
 
     // not needed apparently 
     //setvbuf(stdin, NULL, _IONBF, 0); // disable input buffer
+
     termios termSettings = {};
     tcgetattr(STDIN_FILENO, &termSettings);
     termSettings.c_lflag &= ~(ICANON | ECHO); // disable ICANON mode and ECHO
     termSettings.c_cc[VMIN] = 1; // return from read calls after 1 byte is read
     tcsetattr(STDIN_FILENO, TCSANOW, &termSettings);
 
-    //setForegroundColor(0);
-    //setBackgroundColor(7);
-
-    printf("Initialized Screen with size: %d * %d\n", winSize.column, winSize.row);
-
     // handle ctrl c interrupt
     struct sigaction action;
     action.sa_handler = handleCtrlC;
     sigaction(SIGINT, &action, NULL);
-
-    //char buffer[100] = "";
-    //textInput(buffer, 100);
-
 
     // start application in server or client mode
     if(strcmp(argv[1],"client") == 0){
@@ -90,6 +83,7 @@ void runClient(){
     sockaddr_in addr = {}; 
     char buffer[BUFFER_LENGTH] = "hello World";
 
+    // send to following address
     addr.sin_port = htons(PORT);
     addr.sin_family = AF_INET; 
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
