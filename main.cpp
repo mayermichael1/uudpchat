@@ -52,8 +52,9 @@ int main(int argc, char **argv){
     // not needed apparently 
     //setvbuf(stdin, NULL, _IONBF, 0); // disable input buffer
 
-    termios termSettings = {};
-    tcgetattr(STDIN_FILENO, &termSettings);
+    termios termSettings, orignalTermSettings = {};
+    tcgetattr(STDIN_FILENO, &orignalTermSettings);
+    termSettings = orignalTermSettings; // set new Terminal settings
     termSettings.c_lflag &= ~(ICANON | ECHO); // disable ICANON mode and ECHO
     // TODO: implement something to disable arrow keys up and down
     termSettings.c_cc[VMIN] = 1; // return from read calls after 1 byte is read
@@ -76,6 +77,9 @@ int main(int argc, char **argv){
     }else{
         printUsageCode();
     }
+
+    // reset termianl to canon mode
+    tcsetattr(STDIN_FILENO, TCSANOW, &orignalTermSettings);
 
     return 0;
 }
@@ -171,9 +175,6 @@ void printUsageCode(){
 void handleCtrlC(int signal){
     (void)signal;
     run = false;
-    //TODO: remove this code when polling messages is done
-    printf("\n");
-    _exit(0);
 }
 
 void clearScreen(){
