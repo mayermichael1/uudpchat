@@ -54,6 +54,7 @@ int main(int argc, char **argv){
     termios termSettings = {};
     tcgetattr(STDIN_FILENO, &termSettings);
     termSettings.c_lflag &= ~(ICANON | ECHO); // disable ICANON mode and ECHO
+    // TODO: implement something to disable arrow keys up and down
     termSettings.c_cc[VMIN] = 1; // return from read calls after 1 byte is read
     tcsetattr(STDIN_FILENO, TCSANOW, &termSettings);
 
