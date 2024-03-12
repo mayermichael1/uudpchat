@@ -152,15 +152,27 @@ void runServer(){
     }
 
     char buffer[BUFFER_LENGTH] = "";
+
+    sockaddr_in clientAddr = {};
+    char ip[INET_ADDRSTRLEN] = "";
+    unsigned int addrLength = sizeof(clientAddr);
+
+    pollfd polls[1] = {};
+    polls[0].fd = socketfd;
+    polls[0].events = POLLIN;
+
     while(run){
-        sockaddr_in clientAddr = {};
-        char ip[INET_ADDRSTRLEN] = "";
-        unsigned int addrLength = sizeof(clientAddr);
 
-        recvfrom(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&clientAddr, &addrLength);
+        int ready = poll(polls, 1, -1);
+        if( ready <= 0){
+            continue;
+        }
+        if(polls[0].revents & POLLIN){
+            recvfrom(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&clientAddr, &addrLength);
 
-        inet_ntop(AF_INET, &clientAddr.sin_addr, ip, INET_ADDRSTRLEN);
-        printf("%s:%d> %s\n",ip, ntohs(clientAddr.sin_port), buffer);
+            inet_ntop(AF_INET, &clientAddr.sin_addr, ip, INET_ADDRSTRLEN);
+            printf("%s:%d> %s\n",ip, ntohs(clientAddr.sin_port), buffer);
+        }
 
     }
 }
