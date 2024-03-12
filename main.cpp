@@ -10,6 +10,7 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 
+#include <poll.h>
 
 struct vector{
     int column;
@@ -19,7 +20,7 @@ struct vector{
 static bool run = true;
 
 static unsigned short PORT = 1212;
-static const unsigned int BUFFER_LENGTH = 512;
+static const unsigned int BUFFER_LENGTH = 101;
 
 void runClient();
 void runServer();
@@ -82,21 +83,52 @@ int main(int argc, char **argv){
 void runClient(){
     unsigned int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in addr = {}; 
-    char buffer[BUFFER_LENGTH] = "hello World";
+    char buffer[BUFFER_LENGTH] = {};
+    unsigned int bufferCurrentIndex = 0;
 
     // send to following address
     addr.sin_port = htons(PORT);
     addr.sin_family = AF_INET; 
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-    while(run){
-        printf("> ");
-        textInput(buffer, BUFFER_LENGTH);
-        sendto(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&addr, sizeof(addr));
+    // initialize the terminal
+    clearLine();
+    printf("[%03d/%03d]> %s", bufferCurrentIndex, (BUFFER_LENGTH-1), buffer);
+    fflush(stdout);
 
-        // confirm message sent
-        clearLine();
-        printf("[%-7s]> %s\n","sent", buffer);
+    while(run){
+        // prepare stdin poll
+        pollfd polls[1] = {};
+        polls[0].fd = STDIN_FILENO;
+        polls[0].events = POLLIN; 
+         
+        int ready = poll(polls, 1, -1);
+
+        if(ready > 0){
+            if(polls[0].revents & POLLIN){ // check STDIN_FILENO for poll
+                char character;
+                read(polls[0].fd, &character, 1); 
+
+                if(character == 8 || character == 127){
+                    if(bufferCurrentIndex > 0){ // reset last character
+                        bufferCurrentIndex--;
+                        buffer[bufferCurrentIndex] = 0;
+                    }
+                } else if(character == '\n'){
+                    buffer[bufferCurrentIndex] = 0;
+                    printf("\n");
+                    sendto(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&addr, sizeof(addr));
+                    memset(buffer, 0, BUFFER_LENGTH);
+                    bufferCurrentIndex = 0;
+                }else if((character >= 32 && character <= 126) && bufferCurrentIndex < (BUFFER_LENGTH - 1)){ // "normal" ascii character // TODO: temporary always true
+                    buffer[bufferCurrentIndex] = character;
+                    bufferCurrentIndex++;
+                }
+                clearLine();
+                printf("[%03d/%03d]> %s", bufferCurrentIndex, BUFFER_LENGTH, buffer);
+                fflush(stdout);
+            }
+        }
     }
 }
 
@@ -142,35 +174,6 @@ void handleCtrlC(int signal){
     //TODO: remove this code when polling messages is done
     printf("\n");
     _exit(0);
-}
-
-void textInput(char* buffer, const int MAX_LENGTH){
-    memset(buffer, 0, MAX_LENGTH);
-    unsigned short index = 0;
-    do{
-        clearLine();
-        printf("[%03d/%03d]> %s", index, MAX_LENGTH, buffer);
-        fflush(stdout); // we need to flush the output here because we do not use '\n'
-
-        char character;
-        read(STDIN_FILENO, &character, 1);
-        //TODO: read more than 1 byte if more is available
-
-        if(character == 8 || character == 127){
-            if(index > 0){ // reset last character
-                index--;
-                buffer[index] = 0;
-            }
-            continue;
-        } else if(character == '\n'){
-            buffer[index] = 0;
-            break;
-        }else if(true || (character >= 32 && character <= 126)){ // "normal" ascii character // TODO: temporary always true
-            buffer[index] = character;
-            index++;
-        }
-    }while(index<= MAX_LENGTH);
-
 }
 
 void clearScreen(){
