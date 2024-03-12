@@ -100,38 +100,38 @@ void runClient(){
     printf("[%03d/%03d]> %s", bufferCurrentIndex, (BUFFER_LENGTH-1), buffer);
     fflush(stdout);
 
+    // prepare stdin poll
+    pollfd polls[1] = {};
+    polls[0].fd = STDIN_FILENO;
+    polls[0].events = POLLIN; 
+
     while(run){
-        // prepare stdin poll
-        pollfd polls[1] = {};
-        polls[0].fd = STDIN_FILENO;
-        polls[0].events = POLLIN; 
          
         int ready = poll(polls, 1, -1);
 
-        if(ready > 0){
-            if(polls[0].revents & POLLIN){ // check STDIN_FILENO for poll
-                char character;
-                read(polls[0].fd, &character, 1); 
+        if(ready <= 0){
+            continue;
+        }
+        if(polls[0].revents & POLLIN){ // check STDIN_FILENO for poll
+            char character;
+            read(polls[0].fd, &character, 1); 
 
-                if(character == 8 || character == 127){
-                    if(bufferCurrentIndex > 0){ // reset last character
-                        bufferCurrentIndex--;
-                        buffer[bufferCurrentIndex] = 0;
-                    }
-                } else if(character == '\n'){
-                    buffer[bufferCurrentIndex] = 0;
-                    printf("\n");
-                    sendto(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&addr, sizeof(addr));
-                    memset(buffer, 0, BUFFER_LENGTH);
-                    bufferCurrentIndex = 0;
-                }else if((character >= 32 && character <= 126) && bufferCurrentIndex < (BUFFER_LENGTH - 1)){ // "normal" ascii character // TODO: temporary always true
-                    buffer[bufferCurrentIndex] = character;
-                    bufferCurrentIndex++;
-                }
-                clearLine();
-                printf("[%03d/%03d]> %s", bufferCurrentIndex, BUFFER_LENGTH, buffer);
-                fflush(stdout);
+            if(bufferCurrentIndex > 0 && (character == 8 || character == 127)){
+                bufferCurrentIndex--;
+                buffer[bufferCurrentIndex] = 0;
+            } else if(character == '\n'){
+                setLineStart();
+                printf("[%-8s]\n", "You:");
+                sendto(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&addr, sizeof(addr));
+                memset(buffer, 0, BUFFER_LENGTH);
+                bufferCurrentIndex = 0;
+            } else if((character >= 32 && character <= 126) && bufferCurrentIndex < (BUFFER_LENGTH - 1)){ // "normal" ascii character // TODO: temporary always true
+                buffer[bufferCurrentIndex] = character;
+                bufferCurrentIndex++;
             }
+            clearLine();
+            printf("[%03d/%03d]> %s", bufferCurrentIndex, (BUFFER_LENGTH-1), buffer);
+            fflush(stdout);
         }
     }
 }
