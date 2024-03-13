@@ -101,13 +101,16 @@ void runClient(){
     fflush(stdout);
 
     // prepare stdin poll
-    pollfd polls[1] = {};
+    pollfd polls[2] = {};
     polls[0].fd = STDIN_FILENO;
     polls[0].events = POLLIN; 
 
+    polls[1].fd = socketfd;
+    polls[1].events = POLLIN; 
+
     while(run){
          
-        int ready = poll(polls, 1, -1);
+        int ready = poll(polls, 2, -1);
 
         if(ready <= 0){
             continue;
@@ -121,7 +124,7 @@ void runClient(){
                 buffer[bufferCurrentIndex] = 0;
             } else if(character == '\n'){
                 setLineStart();
-                printf("[%-8s]\n", "You:");
+                printf("[%-8s]>\n", "You:");
                 sendto(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&addr, sizeof(addr));
                 memset(buffer, 0, BUFFER_LENGTH);
                 bufferCurrentIndex = 0;
@@ -133,6 +136,16 @@ void runClient(){
             printf("[%03d/%03d]> %s", bufferCurrentIndex, (BUFFER_LENGTH-1), buffer);
             fflush(stdout);
         }
+        if(polls[1].revents & POLLIN){
+            char recBuffer[BUFFER_LENGTH] = "";
+            recv(socketfd, recBuffer, BUFFER_LENGTH, 0);
+            setLineStart();
+            printf("[%-8s]> %s\n", "SRV", recBuffer);
+            clearLine();
+            printf("[%03d/%03d]> %s", bufferCurrentIndex, (BUFFER_LENGTH-1), buffer);
+            fflush(stdout);
+        }
+
     }
 }
 
@@ -169,9 +182,12 @@ void runServer(){
         }
         if(polls[0].revents & POLLIN){
             recvfrom(socketfd, buffer, BUFFER_LENGTH, 0, (sockaddr*)&clientAddr, &addrLength);
-
             inet_ntop(AF_INET, &clientAddr.sin_addr, ip, INET_ADDRSTRLEN);
             printf("%s:%d> %s\n",ip, ntohs(clientAddr.sin_port), buffer);
+
+            strcpy(buffer,"Message sent");
+            sendto(socketfd, buffer, strlen(buffer), 0, (sockaddr*)&clientAddr, addrLength);
+
         }
 
     }
