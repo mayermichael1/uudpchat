@@ -1,6 +1,6 @@
 #include "../include/client.h"
 
-#include "../include/settings.h"
+#include "../include/networking.h"
 #include "../include/tui.h"
 
 #include <stdio.h>

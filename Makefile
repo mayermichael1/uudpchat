@@ -20,16 +20,16 @@ ${BUILDDIR}/uudpchat: builddir ${OBJECTS}
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(BUILDDIR)/uudpchat $(LDFLAGS) $(LDLIBS)
 
 # compile all objects here
-${BUILDDIR}/main.o: main.cpp include/tui.h include/settings.h
+${BUILDDIR}/main.o: main.cpp include/tui.h include/networking.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c main.cpp -o $(BUILDDIR)/main.o
 
 ${BUILDDIR}/tui.o: src/tui.cpp include/tui.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c src/tui.cpp -o $(BUILDDIR)/tui.o
 
-${BUILDDIR}/server.o: src/server.cpp include/server.h include/settings.h
+${BUILDDIR}/server.o: src/server.cpp include/server.h include/networking.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c src/server.cpp -o $(BUILDDIR)/server.o
 
-${BUILDDIR}/client.o: src/client.cpp include/client.h include/settings.h
+${BUILDDIR}/client.o: src/client.cpp include/client.h include/networking.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c src/client.cpp -o $(BUILDDIR)/client.o
 
 #${BUILDDIR}/src.o: src/src.cpp include/src.h

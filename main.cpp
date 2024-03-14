@@ -6,7 +6,7 @@
 #include <termios.h>
 
 #include "include/tui.h"
-#include "include/settings.h"
+#include "include/networking.h"
 #include "include/client.h"
 #include "include/server.h"
 
