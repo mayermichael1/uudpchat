@@ -35,6 +35,8 @@ ${BUILDDIR}/client.o: src/client.cpp include/client.h include/networking.h
 #${BUILDDIR}/src.o: src/src.cpp include/src.h
 #	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c src/src.cpp -o $(BUILDDIR)/src.o
 
+${BUILDDIR}/client_time_wrapper: builddir client_time_wrapper.cpp
+	$(CXX) $(CXXFLAGS) client_time_wrapper.cpp -o $(BUILDDIR)/client_time_wrapper $(LDFLAGS) $(LDLIBS)
 
 # create build folder if not exists
 .PHONY: builddir
