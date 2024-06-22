@@ -1,5 +1,5 @@
 # default variables
-CXX := clang
+CXX := clang++
 CXXFLAGS := -Wall -Wextra -Werror
 LDFLAGS :=
 LDLIBS := 
@@ -12,7 +12,7 @@ OBJECTS += ${BUILDDIR}/tui.o
 OBJECTS += ${BUILDDIR}/server.o
 OBJECTS += ${BUILDDIR}/client.o
 
-CXXFLAGS += -Og -g 
+CXXFLAGS += -O0 -g 
 # CXXFLAGS += -O2
 
 # link the target here
